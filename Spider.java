@@ -13,9 +13,18 @@ import org.htmlparser.beans.StringBean;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.http.HttpHeader;
 
+import org.jsoup.Connection;
+import org.jsoup.Connection.Response;
+import org.jsoup.HttpStatusException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import org.htmlparser.beans.LinkBean;
 
 public class Spider {
+    String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
     private Queue<String> queue = new LinkedList<>();
     private HMap url_id;
     private HMap id_url;
@@ -28,7 +37,6 @@ public class Spider {
     private int pageID = 0;
     private int processedLink = 0;
     private int limit;
-    private boolean fast_browse;
     private BufferedWriter logger;
     private BufferedWriter writer;
     private BufferedWriter debugger;
@@ -61,6 +69,24 @@ public class Spider {
         }
     }
 
+    // url will never be the duplicated one as we only put new link in the queue
+    public HttpURLConnection getResponse(URL url) throws HttpStatusException, IOException {
+
+        if (url_id.checkEntry(url.toString()) == false){
+            generateID(url.toString());
+        }
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("User-Agent", userAgent);
+        conn.setInstanceFollowRedirects(false);
+//      Connection conn = SSLHelper.getConnection(url.toString()).method(Connection.Method.GET).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36").followRedirects(false);
+//      Response res = conn.execute();
+
+        return conn;
+
+    }
+
     /**
      * a logging mechanism to help programmers in debugging the code.
      * The log will be outputted into the text file specified during
@@ -84,11 +110,9 @@ public class Spider {
      */
     public int generateID(String url) {
         try {
-            if (url_id.checkEntry(url) == true) {
-                return -1;
-            } else {
-                return pageID++;
-            }
+            url_id.addEntry(url, pageID);
+            id_url.addEntry(pageID, url);
+            return pageID++;
         } catch (IOException ex) {
             System.out.println("failed to generate an ID");
             return -2;
@@ -96,71 +120,39 @@ public class Spider {
     }
 
     /**
-     * Recursively find an url link if the given url has a status code 3XX (redirectional)
-     * and returns it as a string
-     *
-     * @param  url  the original url link to be checked if the link is indeed the proper link
-     * @return an unique ID as an integer
-     */
-    public String findActualLinks(String url) {
-        try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setRequestMethod("GET");
-            String responseBody = HttpHeader.getResponseHeader(conn);
-            int status_code = conn.getResponseCode();
-            logging("Status code " + status_code + " for url " + url);
-
-            if (status_code < 300 || status_code >= 400) {
-                logging("the url " + url + " is not changed");
-                return url;
-            } else {
-                responseBody = responseBody.substring(responseBody.indexOf("ocation:") + 9);
-                logging("the following url = " + url);
-                url = responseBody.substring(0, responseBody.indexOf("\n"));
-                logging(" has been changed into = " + url);
-                url = findActualLinks(url);
-            }
-
-        } catch (MalformedURLException ex) {
-            System.out.println("MalformedURLException in findActualLinks() for url " + url);
-        } catch (IOException ex) {
-            System.out.println("IOException in findActualLinks() for url " + url);
-        }
-
-        return url;
-    }
-
-    /**
      * Extracts a HTTP header properties, which for this case only the Title of the page,
      * Last-Modified tag, and Content-Length tag from a given url link. The extracted data
      * will be stored inside page_prop table.
      *
-     * @param  url  the url link to be extracted
+     * @param  conn  the connection of the url link to be extracted
+     * @param parentID the id of the url
      */
-    public void extractHTTPHeaderProp(String url) {
-        logging("Extracting http header from url = " + url);
+    public void extractHTTPHeaderProp(HttpURLConnection conn, int parentID) {
         HashMap<String, String> header_response = new HashMap<String, String>();
-        int parentID = -1;
+        String url = "";
         try {
-            parentID = url_id.getEntry(url);
-            URL url_obj = new URL(url);
-            HttpURLConnection conn = (HttpURLConnection) url_obj.openConnection();
-            conn.setRequestMethod("GET");
+            url = id_url.getEntry(parentID);
+            /* to get the content length */
             header_response.put("Content-Length", Long.toString(conn.getContentLengthLong()));
+
+
+            /* to get the last modified date */
             DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
-            long get_last_modified = conn.getLastModified();
-            if (get_last_modified == 0) {
-                get_last_modified = conn.getDate();
+            long last_modified = conn.getLastModified();
+            if (last_modified == 0) {
+                last_modified = conn.getDate();
             }
-            String date = df.format(new Date(get_last_modified));
+            String date = df.format(new Date(last_modified));
             header_response.put("Last-Modified", date);
+
+            /* to get the title */
             int status_code = conn.getResponseCode();
-            if (status_code >= 500) {
-                header_response.put("Title", status_code + " " + conn.getResponseMessage());
-            } else if (status_code >= 400) {
+            if (status_code >= 400) {
                 header_response.put("Title", status_code + " " + conn.getResponseMessage());
             } else {
-                Parser parser = new Parser(url_obj.openConnection());
+                URLConnection connection = new URL(url).openConnection();
+                connection.setRequestProperty("User-Agent", userAgent);
+                Parser parser = new Parser(connection);
                 TitleTag titleTag = (TitleTag) parser.extractAllNodesThatMatch(node -> node instanceof TitleTag).elementAt(0);
                 if (titleTag == null) {
                     header_response.put("Title", url);
@@ -168,15 +160,18 @@ public class Spider {
                     header_response.put("Title", titleTag.getTitle());
                 }
 
+
             }
 
+        } catch (ParserException ex) {
+            System.out.println("ParserException extractHTTPHeaderProp() for url " + url);
+            ex.printStackTrace();
         } catch (MalformedURLException ex) {
             System.out.println("MalformedURLException extractHTTPHeaderProp() for url " + url);
+            ex.printStackTrace();
         } catch (IOException ex) {
             System.out.println("IOException extractHTTPHeaderProp() for url" + url);
             ex.printStackTrace();
-        } catch (ParserException ex) {
-            System.out.println("ParserException extractHTTPHeaderProp() for url " + url);
         }
 
         try {
@@ -192,12 +187,11 @@ public class Spider {
      * (page ID, frequency) and put it inside its corresponding
      * forward index page_word
      *
-     * @param  url  the url link to be extracted
+     * @param  doc  the doc of the url link to be extracted
+     * @param parentID the id of the url
      */
-    public void extractWords(String url) throws ParserException {
-
+    public void extractWords(String url, int parentID) throws ParserException {
         try {
-            int parentID = url_id.getEntry(url);
             StringBean sb = new StringBean();
 
             sb.setLinks(false);
@@ -220,75 +214,62 @@ public class Spider {
 
     }
 
+    public boolean isValidUrl(String url) {
+        try {
+            new URL(url).toURI();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    public boolean filter(String url) {
+        try {
+            URI uri = new URI(url);
+            if (uri.isOpaque()) return false;
+            return !uri.isAbsolute() || (uri.getScheme().equals("http") || uri.getScheme().equals("https"));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
     /**
      * Extracts links inside the website page from a given url (if any) together with their
      * actual link by invoking findActualLink() method. For every new link: index it, and store it inside
      * the parent-child relationship database (vice versa) and add it to the queue to be crawled.
      *
-     * @param  url  the url link to be extracted
+     * @param  _url  the url link to be extracted
+     * @param parentID the id of the url link
      */
-    public void extractLinks(String url) throws ParserException {
-        logging("Extracting links from parent url = " + url);
+    public void extractLinks(String _url, int parentID) throws ParserException, IOException {
         LinkBean lb = new LinkBean();
-        int parentID = generateID(url);
-
-        try {
-            if (parentID != -1) {
-                url_id.addEntry(url, parentID);
-                id_url.addEntry(parentID, url);
-            } else {
-                parentID = url_id.getEntry(url);
-            }
-
-        } catch (IOException ex) {
-            System.out.println("failed in creating an ID for parentID");
-        }
-
-        lb.setURL(url);
+        lb.setURL(_url);
         URL[] URL_array = lb.getLinks();
-        try {
-            if (URL_array.length == 0) {
-                parent_child.addEntry(parentID, -1);
-                logging("There is nothing to extract in " + url);
-
-            } else {
-                HashMap<Integer, Integer> map_of_existing_child = new HashMap<Integer, Integer>();
-
-                for (int i = 0; i < URL_array.length; i++) {
-                    if (fast_browse == false) {
-                        if (url_url.checkEntry(URL_array[i].toString()) == true) {
-                            url = url_url.getURL(URL_array[i].toString());
-                        } else {
-                            url = findActualLinks(URL_array[i].toString());
-                            url_url.addEntry(URL_array[i].toString(), url);
-                        }
-                    } else {
-                        url = URL_array[i].toString();
-                    }
-
-                    int childID = generateID(url);
-
-                    if (childID == -1) {
-                        logging("the url = " + url + " exists in the db with ID = " + url_id.getEntry(url));
-                        childID = url_id.getEntry(url);
-                    } else {
-                        logging("adding the url = " + url + " with ID: " + childID);
-                        queue.add(url);
-                        url_id.addEntry(url, childID);
-                        id_url.addEntry(childID, url);
-                    }
-                    if (map_of_existing_child.get(childID) == null) {
-                        parent_child.addEntry(parentID, childID);
-                        child_parent.addEntry(childID, parentID);
-                        map_of_existing_child.put(childID, 1);
-                    }
-
-                }
-            }
-        } catch (IOException ex) {
-            System.out.println("failed in adding an entry");
+        if (URL_array.length == 0) {
+            logging("There is nothing to extract in " + _url);
+            return;
         }
+        HashMap<Integer, Integer> map_of_existing_child = new HashMap<>();
+        for (int i = 0; i < URL_array.length; ++i) {
+            String url = URL_array[i].toString();
+            if (isValidUrl(url) == false || filter(url) == false) continue;
+            url = url.split("#")[0];
+            System.out.println(url);
+            int childID;
+            if (url_id.checkEntry(url) == false){
+                childID = generateID(url);
+                logging("adding the url = " + url + " with ID: " + childID);
+                queue.add(url);
+            } else {
+                childID = url_id.getEntry(url);
+                logging("the url = " + url + " exists in the db with ID = " + childID);
+            }
+            if (map_of_existing_child.get(childID) == null) {
+                parent_child.addEntry(parentID, childID);
+                child_parent.addEntry(childID, parentID);
+                map_of_existing_child.put(childID, 1);
+            }
 
+        }
     }
 
     /**
@@ -411,12 +392,9 @@ public class Spider {
      *
      * @param _url the root url to be crawled
      */
-    public void crawl(String _url, boolean _fast_browse) {
+    public void crawl(String _url) {
         String original_url = _url;
-        fast_browse = _fast_browse;
 
-        if (fast_browse == false)
-            _url = findActualLinks(original_url);
         try {
             url_url.addEntry(original_url, _url);
             queue.add(_url);
@@ -424,11 +402,34 @@ public class Spider {
                 if (queue.isEmpty()) {
                     break;
                 }
+
                 String url = queue.remove();
                 System.out.println(processedLink + " = " + url);
-                extractLinks(url);
-                extractWords(url);
-                extractHTTPHeaderProp(url);
+
+                HttpURLConnection conn = getResponse(new URL(url));
+                int id = url_id.getEntry(url);
+                /* there's a redirection (status code = 3XX) */
+                String actual_url = conn.getHeaderField("Location");
+                if (actual_url != null) {
+                    int actual_id;
+                    if (url_id.checkEntry(actual_url) == false) {
+                        actual_id = generateID(actual_url);
+                        queue.add(actual_url);
+                    } else {
+                        actual_id = url_id.getEntry(actual_url);
+                    }
+                    parent_child.addEntry(id, actual_id);
+                    child_parent.addEntry(actual_id, id);
+                }
+                if (actual_url == null) {
+                    logging("Extracting links from parent u rl = " + url);
+                    extractLinks(url, id);
+                    extractWords(url, id);
+                } else {
+                    page_word.addEntry(id, null);
+                }
+
+                extractHTTPHeaderProp(conn, id);
                 logging("=-=-=-=-=-=-=-=-=-=-=-=");
                 processedLink++;
 
@@ -449,7 +450,7 @@ public class Spider {
         } catch (ParserException ex) {
             System.out.println("error in browsing");
         } catch (IOException ex) {
-            System.out.println("error in first step");
+            ex.printStackTrace();
         }
     }
 

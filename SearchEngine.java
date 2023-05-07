@@ -8,7 +8,7 @@ public class SearchEngine {
      *
      */
     SearchEngine() {
-        spider = new Spider(30, "debug.txt", "spider_result.txt", "log.txt");
+        spider = new Spider(30, "debug_final.txt", "spider_result_final.txt", "log_final.txt");
     }
 
     /**
@@ -16,18 +16,15 @@ public class SearchEngine {
      *
      * @param  url  the url link to processed
      */
-    public void fast_browse(String url) {
-        spider.crawl(url, true);
-    }
 
     public void browse(String url) {
-        spider.crawl(url, false);
+        spider.crawl(url);
     }
 
 
     public static void main(String[] args) {
         SearchEngine se = new SearchEngine();
-        System.out.println(args[1]);
+        se.browse(args[0]);
         if (args[1].equals("slow")) {
             System.out.println("doing slow browsing...");
             se.browse(args[0]);
