@@ -1,5 +1,5 @@
 *.db
 *.lg
 *.txt
-!stopwords.txt.txt
+!stopwords.txt
 *.class
