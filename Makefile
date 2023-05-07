@@ -1,4 +1,4 @@
-url = http://127.0.0.1:8081/a.html
+url = http://www.cse.ust.hk
 
 clean:
 	rm *.db *.lg

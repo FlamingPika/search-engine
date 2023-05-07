@@ -4,6 +4,8 @@ import java.util.*;
 import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+
+import Utilities.StopStem;
 import org.htmlparser.Parser;
 import org.htmlparser.tags.TitleTag;
 import org.htmlparser.beans.StringBean;
@@ -29,6 +31,7 @@ public class Spider {
     private BufferedWriter logger;
     private BufferedWriter writer;
     private BufferedWriter debugger;
+    private StopStem stopStem;
 
     /**
      * The constructor of the spider object. Initializes all the
@@ -52,6 +55,7 @@ public class Spider {
             logger = new BufferedWriter(new FileWriter(_log_filename));
             writer = new BufferedWriter(new FileWriter(_result_filename));
             debugger = new BufferedWriter(new FileWriter(_debug_filename));
+            stopStem = new StopStem();
 
         } catch (IOException ex) {
             System.out.println("failed to init inverted indexes");
@@ -187,7 +191,7 @@ public class Spider {
      * (page ID, frequency) and put it inside its corresponding
      * forward index page_word
      *
-     * @param  doc  the doc of the url link to be extracted
+     * @param  url  the url link to be extracted
      * @param parentID the id of the url
      */
     public void extractWords(String url, int parentID) throws ParserException {
@@ -201,6 +205,8 @@ public class Spider {
             if (tokens.hasMoreTokens()) {
                 while (tokens.hasMoreTokens()) {
                     String word = tokens.nextToken();
+                    if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
+                    word = stopStem.stem(word);
                     word_page.addFrequency(word, parentID);
                     page_word.addEntry(parentID, word);
                 }
