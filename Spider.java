@@ -204,13 +204,10 @@ public class Spider {
             StringTokenizer tokens = new StringTokenizer(sb.getStrings());
             if (tokens.hasMoreTokens()) {
                 while (tokens.hasMoreTokens()) {
-                    String wword = tokens.nextToken();
-                    System.out.println("ORIGINAL WORD " + wword);
-                    if (!StopStem.isAlphaNum(wword) || stopStem.isStopWord(wword)) continue;
-                    String word = stopStem.stem(wword);
-                    if (word == "" || word == " ") {
-                        System.out.println("FOUND EMPTY STRING IN " + url + " WITH ORIGINAL WORD " + wword);
-                    }
+                    String word = tokens.nextToken();
+                    if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
+                    word = stopStem.stem(word);
+                    if (word == "" || word == " ") continue;
                     word_page.addFrequency(word, parentID);
                     page_word.addWords(parentID, word);
                 }
