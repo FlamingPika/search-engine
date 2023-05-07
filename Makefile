@@ -1,18 +1,13 @@
-url = http://www.cse.ust.hk/
+url = http://127.0.0.1:8081/a.html
 
 clean:
 	rm *.db *.lg
-fast:
-	javac -cp jdbm-1.0.jar HMap.java
-	javac -cp htmlparser.jar:jdbm-1.0.jar:. Spider.java
-	javac -cp htmlparser.jar:jdbm-1.0.jar:. SearchEngine.java
-	java -cp htmlparser.jar:jdbm-1.0.jar:. SearchEngine $(url) fast
 
-slow:
+run:
 	javac -cp jdbm-1.0.jar HMap.java
-	javac -cp htmlparser.jar:jdbm-1.0.jar:. Spider.java
-	javac -cp htmlparser.jar:jdbm-1.0.jar:. SearchEngine.java
-	java -cp htmlparser.jar:jdbm-1.0.jar:. SearchEngine $(url) slow
+	javac -cp htmlparser.jar:jdbm-1.0.jar:jsoup-1.15.4.jar:. Spider.java
+	javac -cp htmlparser.jar:jdbm-1.0.jar:jsoup-1.15.4.jar:. SearchEngine.java
+	java -cp htmlparser.jar:jdbm-1.0.jar:jsoup-1.15.4.jar:. SearchEngine $(url)
 
 test:
 	javac -cp jdbm-1.0.jar:. Tester.java
