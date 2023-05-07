@@ -2,26 +2,15 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.net.HttpURLConnection;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import org.htmlparser.Parser;
 import org.htmlparser.tags.TitleTag;
-
 import org.htmlparser.beans.StringBean;
 import org.htmlparser.util.ParserException;
-import org.htmlparser.http.HttpHeader;
-
-import org.jsoup.Connection;
-import org.jsoup.Connection.Response;
-import org.jsoup.HttpStatusException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import org.htmlparser.beans.LinkBean;
+import org.jsoup.HttpStatusException;
+
 
 public class Spider {
     String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
@@ -80,8 +69,6 @@ public class Spider {
         conn.setRequestMethod("GET");
         conn.setRequestProperty("User-Agent", userAgent);
         conn.setInstanceFollowRedirects(false);
-//      Connection conn = SSLHelper.getConnection(url.toString()).method(Connection.Method.GET).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36").followRedirects(false);
-//      Response res = conn.execute();
 
         return conn;
 

@@ -25,13 +25,6 @@ public class SearchEngine {
     public static void main(String[] args) {
         SearchEngine se = new SearchEngine();
         se.browse(args[0]);
-        if (args[1].equals("slow")) {
-            System.out.println("doing slow browsing...");
-            se.browse(args[0]);
-        } else {
-            System.out.println("doing fast browsing...");
-            se.fast_browse(args[0]);
-        }
 
     }
 }
