@@ -34,7 +34,7 @@ public class Tester {
 
     public static void main(String[] args) {
         try {
-            BufferedWriter debugger = new BufferedWriter(new FileWriter("test.txt"));
+            BufferedWriter debugger = new BufferedWriter(new FileWriter("test_test.txt"));
 
             HMap url_id = new HMap("url-id", "url-id");
             HMap id_url = new HMap("id_url", "id_url");
@@ -76,7 +76,7 @@ public class Tester {
             }
 
             debugger.write("\n \npage-word inverted index:\n");
-            res = page_word.iPrintAll();
+            res = page_word.hPrintAll();
             for (int i = 0; i < res.size(); ++i) {
                 debugger.write(res.get(i) + "\n");
             }

@@ -204,14 +204,18 @@ public class Spider {
             StringTokenizer tokens = new StringTokenizer(sb.getStrings());
             if (tokens.hasMoreTokens()) {
                 while (tokens.hasMoreTokens()) {
-                    String word = tokens.nextToken();
-                    if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
-                    word = stopStem.stem(word);
+                    String wword = tokens.nextToken();
+                    System.out.println("ORIGINAL WORD " + wword);
+                    if (!StopStem.isAlphaNum(wword) || stopStem.isStopWord(wword)) continue;
+                    String word = stopStem.stem(wword);
+                    if (word == "" || word == " ") {
+                        System.out.println("FOUND EMPTY STRING IN " + url + " WITH ORIGINAL WORD " + wword);
+                    }
                     word_page.addFrequency(word, parentID);
-                    page_word.addEntry(parentID, word);
+                    page_word.addWords(parentID, word);
                 }
             } else {
-                page_word.addEntry(parentID, null);
+                page_word.addWords(parentID, null);
             }
 
         } catch (IOException ex) {
@@ -352,11 +356,14 @@ public class Spider {
                     }
                 }
                 int counter = 0;
-                String words = page_word.getEntry(i);
-                if (words != null) {
-                    String[] word_list = words.split("\\s+");
-                    for (String w : word_list) {
-                        if (counter >= magic_number || counter == word_list.length) {
+                HashMap<String,Boolean> h = page_word.getWords(i);
+                if (h != null) {
+                    Set<String> words = h.keySet();
+                    for (String w : words) {
+                        if (w == null) {
+                            break;
+                        }
+                        if (counter >= magic_number || counter == words.size()) {
                             break;
                         }
                         HashMap<Integer, Integer> hmap = word_page.getHashTable(w);
@@ -432,7 +439,7 @@ public class Spider {
                     extractLinks(url, id);
                     extractWords(url, id);
                 } else {
-                    page_word.addEntry(id, null);
+                    page_word.addWords(id, null);
                 }
 
                 extractHTTPHeaderProp(conn, id);

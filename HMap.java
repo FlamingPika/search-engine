@@ -4,10 +4,7 @@ import jdbm.htree.HTree;
 import jdbm.helper.FastIterator;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
 public class HMap {
     private RecordManager recman;
@@ -87,6 +84,14 @@ public class HMap {
         }
     }
 
+    public HashMap<String,Boolean> getWords(int key) throws IOException {
+        if (hashtable.get(key) == null) {
+            return null;
+        } else {
+            return (HashMap<String,Boolean>) hashtable.get(key);
+        }
+    }
+
     /**
      * A function to retrieve a value from a given ID
      *
@@ -154,6 +159,32 @@ public class HMap {
                 hashtable.put(key, hashtable.get(key) + " " + value);
             } else {
                 hashtable.put(key, value);
+            }
+        } catch (IOException ex) {
+            System.out.println("failed in adding an entry");
+        }
+
+    }
+
+    /**
+     * A function to add a key value pair into the database where the key is an integer
+     * and the value is a string. If the key exists, then the function will update its
+     * value by concatenating it to the previous value
+     *
+     * @param key   the key to be stored
+     * @param value the value to be stored
+     */
+    public void addWords(int key, String value) throws IOException {
+
+        try {
+            if (hashtable.get(key) != null) {
+                HashMap<String, Boolean> h = (HashMap<String, Boolean>) hashtable.get(key);
+                h.put(value, true);
+                hashtable.put(key, h);
+            } else {
+                HashMap<String, Boolean> h = new HashMap<String, Boolean>();
+                h.put(value, true);
+                hashtable.put(key, h);
             }
         } catch (IOException ex) {
             System.out.println("failed in adding an entry");
@@ -286,6 +317,28 @@ public class HMap {
         Object obj;
         while ((obj = iter.next()) != null) {
             printed.add(obj.toString() + " = " + hashtable.get((int) obj));
+        }
+        return printed;
+
+    }
+
+    /**
+     * A function to print the insides of a database if the result is
+     * in integer type
+     */
+    public Vector<String> hPrintAll() throws IOException {
+        // Print all the data in the hashtable
+        Vector<String> printed = new Vector<String>();
+        FastIterator iter = hashtable.keys();
+        Object obj;
+        while ((obj = iter.next()) != null) {
+            HashMap<String, Boolean> h = (HashMap<String, Boolean>)hashtable.get((int) obj);
+            Set<String> keys = h.keySet();
+            StringBuilder s = new StringBuilder();
+            for (String key : keys) {
+                s.append(key).append(" ");
+            }
+            printed.add(obj.toString() + " = " + s.toString());
         }
         return printed;
 

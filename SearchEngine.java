@@ -8,7 +8,7 @@ public class SearchEngine {
      *
      */
     SearchEngine() {
-        spider = new Spider(30, "debug_final.txt", "spider_result_final.txt", "log_final.txt");
+        spider = new Spider(30, "debug_test.txt", "spider_result_test.txt", "log_test.txt");
     }
 
     /**
