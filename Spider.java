@@ -133,8 +133,9 @@ public class Spider {
         try {
             url = id_url.getEntry(parentID);
             /* to get the content length */
-            header_response.put("Content-Length", Long.toString(conn.getContentLengthLong()));
-
+            Long content_length = conn.getContentLengthLong();
+            if (content_length != -1)
+                header_response.put("Content-Length", Long.toString(content_length));
 
             /* to get the last modified date */
             DateFormat df = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss");
@@ -158,6 +159,18 @@ public class Spider {
                     header_response.put("Title", url);
                 } else {
                     header_response.put("Title", titleTag.getTitle());
+                }
+
+                if (content_length == -1){
+                    InputStream inputStream = conn.getInputStream();
+                    StringBuilder html = new StringBuilder();
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        html.append(new String(buffer, 0, bytesRead));
+                    }
+                    inputStream.close();
+                    header_response.put("Content-Length", Integer.toString(html.length()));
                 }
 
 
