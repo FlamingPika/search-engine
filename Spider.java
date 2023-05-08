@@ -63,7 +63,7 @@ public class Spider {
     }
 
     // url will never be the duplicated one as we only put new link in the queue
-    public HttpURLConnection getResponse(URL url) throws HttpStatusException, IOException {
+    public HttpURLConnection getResponse(URL url) throws IOException {
 
         if (url_id.checkEntry(url.toString()) == false){
             generateID(url.toString());
@@ -423,32 +423,41 @@ public class Spider {
                 String url = queue.remove();
                 System.out.println(processedLink + " = " + url);
 
-                HttpURLConnection conn = getResponse(new URL(url));
-                int id = url_id.getEntry(url);
-                /* there's a redirection (status code = 3XX) */
-                String actual_url = conn.getHeaderField("Location");
-                if (actual_url != null) {
-                    int actual_id;
-                    if (url_id.checkEntry(actual_url) == false) {
-                        actual_id = generateID(actual_url);
-                        queue.add(actual_url);
-                    } else {
-                        actual_id = url_id.getEntry(actual_url);
+                try {
+                    HttpURLConnection conn = getResponse(new URL(url));
+                    System.out.println(conn.getResponseMessage());
+                    int id = url_id.getEntry(url);
+                    /* there's a redirection (status code = 3XX) */
+                    String actual_url = conn.getHeaderField("Location");
+                    if (actual_url != null) {
+                        int actual_id;
+                        if (url_id.checkEntry(actual_url) == false) {
+                            actual_id = generateID(actual_url);
+                            queue.add(actual_url);
+                        } else {
+                            actual_id = url_id.getEntry(actual_url);
+                        }
+                        parent_child.addEntry(id, actual_id);
+                        child_parent.addEntry(actual_id, id);
                     }
-                    parent_child.addEntry(id, actual_id);
-                    child_parent.addEntry(actual_id, id);
-                }
-                if (actual_url == null) {
-                    logging("Extracting links from parent u rl = " + url);
-                    extractLinks(url, id);
-                    extractWords(url, id);
-                } else {
-                    page_word.addWords(id, null);
-                }
 
-                extractHTTPHeaderProp(conn, id);
-                logging("=-=-=-=-=-=-=-=-=-=-=-=");
-                processedLink++;
+                    extractHTTPHeaderProp(conn, id);
+
+                    if (actual_url == null) {
+                        logging("Extracting links from parent u rl = " + url);
+                        extractLinks(url, id);
+                        extractWords(url, id);
+                    } else {
+                        page_word.addWords(id, null);
+                    }
+
+                    logging("=-=-=-=-=-=-=-=-=-=-=-=");
+                    processedLink++;
+                } catch (MalformedURLException e) {
+                    System.out.println("Malformed url...");
+                } catch (UnknownHostException e) {
+                    System.out.println("Unknown host...");
+                }
 
             }
 
