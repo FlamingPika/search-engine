@@ -201,6 +201,8 @@ public class Spider {
             StringBean sb = new StringBean();
             boolean isTitle = true;
             String title = page_props.getTitle(parentID);
+            int titleCount = title.split("\\s+").length;
+            int counter = 0;
             sb.setLinks(false);
             sb.setURL(url);
 
@@ -210,10 +212,11 @@ public class Spider {
                     String word = tokens.nextToken();
                     if (stopStem.isStopWord(word)) continue;
                     if (title != null) {
-                        if (isTitle && title.contains(word)) {
+                        if (isTitle && title.contains(word) && counter < titleCount) {
                             word = stopStem.stem(word);
                             title_page.addFrequency(word, parentID);
                             page_title.addWords(parentID, word);
+                            counter = counter + 1;
                             continue;
                         } else {
                             isTitle = false;
