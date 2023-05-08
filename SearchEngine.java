@@ -32,7 +32,7 @@ public class SearchEngine {
 
     public void search(String input){
         List<Integer> l = retrieval.retrieve(50, input);
-        for (int i = 0; i < 50; ++i){
+        for (int i = 0; i < l.size(); ++i){
             System.out.println(l.get(i));
         }
     }
