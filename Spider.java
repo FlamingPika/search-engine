@@ -19,11 +19,11 @@ public class Spider {
     private Queue<String> queue = new LinkedList<>();
     private HMap url_id;
     private HMap id_url;
-    private HMap url_url;
     private HMap parent_child;
     private HMap child_parent;
     private HMap word_page;
     private HMap page_word;
+    private HMap page_title;
     private HMap page_props;
     private int pageID = 0;
     private int processedLink = 0;
@@ -46,11 +46,11 @@ public class Spider {
         try {
             url_id = new HMap("url-id", "url-id");
             id_url = new HMap("id_url", "id_url");
-            url_url = new HMap("url_url", "url_url");
             parent_child = new HMap("parent-child", "parent-child");
             child_parent = new HMap("child-parent", "child-parent");
             word_page = new HMap("word-page", "word-page");
             page_word = new HMap("page-word", "page-word");
+            page_title = new HMap("page-title", "page-title");
             page_props = new HMap("page-props", "page-props");
             logger = new BufferedWriter(new FileWriter(_log_filename));
             writer = new BufferedWriter(new FileWriter(_result_filename));
@@ -197,7 +197,8 @@ public class Spider {
     public void extractWords(String url, int parentID) throws ParserException {
         try {
             StringBean sb = new StringBean();
-
+            boolean isTitle = true;
+            String title = page_props.getTitle(parentID);
             sb.setLinks(false);
             sb.setURL(url);
 
@@ -208,6 +209,14 @@ public class Spider {
                     if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
                     word = stopStem.stem(word);
                     if (word == "" || word == " ") continue;
+                    if (title != null) {
+                        if (isTitle && title.contains(word)) {
+                            page_title.addWords(parentID, word);
+                            continue;
+                        } else {
+                            isTitle = false;
+                        }
+                    }
                     word_page.addFrequency(word, parentID);
                     page_word.addWords(parentID, word);
                 }
@@ -353,7 +362,7 @@ public class Spider {
                     }
                 }
                 int counter = 0;
-                HashMap<String,Boolean> h = page_word.getWords(i);
+                HashMap<String,Integer> h = page_word.getWords(i);
                 if (h != null) {
                     Set<String> words = h.keySet();
                     for (String w : words) {
@@ -403,10 +412,8 @@ public class Spider {
      * @param _url the root url to be crawled
      */
     public void crawl(String _url) {
-        String original_url = _url;
 
         try {
-            url_url.addEntry(original_url, _url);
             queue.add(_url);
             while (processedLink < limit) {
                 if (queue.isEmpty()) {
@@ -450,7 +457,6 @@ public class Spider {
 
             url_id.done();
             id_url.done();
-            url_url.done();
             parent_child.done();
             child_parent.done();
             word_page.done();

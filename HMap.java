@@ -84,11 +84,11 @@ public class HMap {
         }
     }
 
-    public HashMap<String,Boolean> getWords(int key) throws IOException {
+    public HashMap<String,Integer> getWords(int key) throws IOException {
         if (hashtable.get(key) == null) {
             return null;
         } else {
-            return (HashMap<String,Boolean>) hashtable.get(key);
+            return (HashMap<String,Integer>) hashtable.get(key);
         }
     }
 
@@ -178,12 +178,17 @@ public class HMap {
 
         try {
             if (hashtable.get(key) != null) {
-                HashMap<String, Boolean> h = (HashMap<String, Boolean>) hashtable.get(key);
-                h.put(value, true);
+                HashMap<String, Integer> h = (HashMap<String, Integer>) hashtable.get(key);
+                if (h.get(value) != null) {
+                    h.put(value, (Integer)h.get(value) + 1);
+                } else {
+                    h.put(value, 1);
+                }
+
                 hashtable.put(key, h);
             } else {
-                HashMap<String, Boolean> h = new HashMap<String, Boolean>();
-                h.put(value, true);
+                HashMap<String, Integer> h = new HashMap<String, Integer>();
+                h.put(value, 1);
                 hashtable.put(key, h);
             }
         } catch (IOException ex) {
@@ -332,11 +337,11 @@ public class HMap {
         FastIterator iter = hashtable.keys();
         Object obj;
         while ((obj = iter.next()) != null) {
-            HashMap<String, Boolean> h = (HashMap<String, Boolean>)hashtable.get((int) obj);
+            HashMap<String, Integer> h = (HashMap<String, Integer>)hashtable.get((int) obj);
             Set<String> keys = h.keySet();
             StringBuilder s = new StringBuilder();
             for (String key : keys) {
-                s.append(key).append(" ");
+                s.append(key).append(": ").append((Integer)h.get(key)).append(" - ");
             }
             printed.add(obj.toString() + " = " + s.toString());
         }
@@ -357,6 +362,13 @@ public class HMap {
         printed.add(res.get("Last-Modified") + ", " + res.get("Content-Length"));
 
         return printed;
+
+    }
+
+    public String getTitle(int id) throws IOException {
+        // Print all the data in the hashtable
+        HashMap<String, String> res = (HashMap<String, String>) hashtable.get(id);
+        return res.get("Title");
 
     }
 
