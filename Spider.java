@@ -208,7 +208,7 @@ public class Spider {
             if (tokens.hasMoreTokens()) {
                 while (tokens.hasMoreTokens()) {
                     String word = tokens.nextToken();
-                    if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
+                    if (stopStem.isStopWord(word)) continue;
                     if (title != null) {
                         if (isTitle && title.contains(word)) {
                             word = stopStem.stem(word);
@@ -331,7 +331,7 @@ public class Spider {
             }
 
             debugger.write("\n \npage-word inverted index:");
-            res = page_word.iPrintAll();
+            res = page_word.hPrintAll();
             for (int i = 0; i < res.size(); ++i) {
                 debugger.write(res.get(i) + "\n");
             }
@@ -343,7 +343,7 @@ public class Spider {
             }
 
             debugger.write("\n \npage-title inverted index:");
-            res = page_title.iPrintAll();
+            res = page_title.hPrintAll();
             for (int i = 0; i < res.size(); ++i) {
                 debugger.write(res.get(i) + "\n");
             }
@@ -487,6 +487,8 @@ public class Spider {
             child_parent.done();
             word_page.done();
             page_word.done();
+            title_page.done();
+            page_title.done();
             page_props.done();
 
         } catch (ParserException ex) {
