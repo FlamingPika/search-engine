@@ -22,6 +22,7 @@ public class Spider {
     private HMap parent_child;
     private HMap child_parent;
     private HMap word_page;
+    private HMap title_page;
     private HMap page_word;
     private HMap page_title;
     private HMap page_props;
@@ -50,6 +51,7 @@ public class Spider {
             child_parent = new HMap("child-parent", "child-parent");
             word_page = new HMap("word-page", "word-page");
             page_word = new HMap("page-word", "page-word");
+            title_page = new HMap("title-page", "title-page");
             page_title = new HMap("page-title", "page-title");
             page_props = new HMap("page-props", "page-props");
             logger = new BufferedWriter(new FileWriter(_log_filename));
@@ -207,21 +209,24 @@ public class Spider {
                 while (tokens.hasMoreTokens()) {
                     String word = tokens.nextToken();
                     if (!StopStem.isAlphaNum(word) || stopStem.isStopWord(word)) continue;
-                    word = stopStem.stem(word);
-                    if (word == "" || word == " ") continue;
                     if (title != null) {
                         if (isTitle && title.contains(word)) {
+                            word = stopStem.stem(word);
+                            title_page.addFrequency(word, parentID);
                             page_title.addWords(parentID, word);
                             continue;
                         } else {
                             isTitle = false;
                         }
                     }
+                    word = stopStem.stem(word);
+                    if (word == "" || word == " ") continue;
                     word_page.addFrequency(word, parentID);
                     page_word.addWords(parentID, word);
                 }
             } else {
                 page_word.addWords(parentID, null);
+                page_title.addWords(parentID, null);
             }
 
         } catch (IOException ex) {
@@ -331,6 +336,18 @@ public class Spider {
                 debugger.write(res.get(i) + "\n");
             }
 
+            debugger.write("\n \ntitle-page inverted index:");
+            res = title_page.sPrintAll();
+            for (int i = 0; i < res.size(); ++i) {
+                debugger.write(res.get(i) + "\n");
+            }
+
+            debugger.write("\n \npage-title inverted index:");
+            res = page_title.iPrintAll();
+            for (int i = 0; i < res.size(); ++i) {
+                debugger.write(res.get(i) + "\n");
+            }
+
             debugger.write("\n \npage-props inverted index:");
             res = page_props.iPrintAll();
             for (int i = 0; i < res.size(); ++i) {
@@ -425,7 +442,6 @@ public class Spider {
 
                 try {
                     HttpURLConnection conn = getResponse(new URL(url));
-                    System.out.println(conn.getResponseMessage());
                     int id = url_id.getEntry(url);
                     /* there's a redirection (status code = 3XX) */
                     String actual_url = conn.getHeaderField("Location");
@@ -449,6 +465,7 @@ public class Spider {
                         extractWords(url, id);
                     } else {
                         page_word.addWords(id, null);
+                        page_title.addWords(id, null);
                     }
 
                     logging("=-=-=-=-=-=-=-=-=-=-=-=");
