@@ -1,6 +1,12 @@
 import Utilities.StopStem;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.PriorityQueue;
+import java.util.Comparator;
+import java.util.HashMap;
 
 public class Retrieval {
     StopStem stopStem;
@@ -13,6 +19,7 @@ public class Retrieval {
     HashMap<Integer, Double> titleMaxFreq;
     HashMap<Integer, Double> bodyMaxFreq;
     HashMap<String, Integer> queryFreq;
+    HashMap<Integer, HashMap<String, Double>> bookOfKnowledge;
     Retrieval(int _numDocs) {
 
         numDocs = _numDocs;
@@ -21,6 +28,7 @@ public class Retrieval {
         bodyMaxFreq = new HashMap<>();
         queryFreq = new HashMap<>();
         queries = new ArrayList<String>();
+        bookOfKnowledge = new HashMap<Integer, HashMap<String, Double>>();
 
         try {
             word_page = new HMap("word-page", "word-page");
@@ -63,41 +71,73 @@ public class Retrieval {
     private Double calculateIDF(double docFrequency) {
         return Math.log(1+(numDocs / docFrequency));
     }
-    private double calculateTermWeight(int pageID, String query){
 
+    private void calculateTermWeight(int pageID){
         try {
-            System.out.println("PAGE = " + pageID);
-            HashMap<Integer, Integer> pageWordsFreq = word_page.getHashTable(query);
-            HashMap<Integer, Integer> pageTitleFreq = title_page.getHashTable(query);
-            double titleFrequency;
-            double bodyFrequency;
-            if (pageWordsFreq == null) {
-                bodyFrequency = 0;
-                System.out.println("bodyFrequency NULL");
-            } else {
-                bodyFrequency = (pageWordsFreq.get(pageID) != null) ? pageWordsFreq.get(pageID) : 0;
+            HashMap<String, Integer> pageWordsFreq = page_word.getWords(pageID);
+            HashMap<String, Integer> pageTitleFreq = page_title.getWords(pageID);
+            int titleCount = pageTitleFreq.size();
+            int counter = 0;
+            Set<String> wordSet = pageWordsFreq.keySet();
+            for(String word: wordSet) {
+                double bodyFrequency;
+                if (word != null) {
+                    bodyFrequency = pageWordsFreq.get(word);
+                } else {
+                    break;
+                }
+                double titleFrequency;
+                if (pageTitleFreq.get(word) != null) {
+                    titleFrequency = pageTitleFreq.get(word);
+                    counter = counter + 1;
+                } else {
+                    titleFrequency = 0;
+                }
+                double maxTitleFrequency = (titleMaxFreq.get(pageID) != null) ? titleMaxFreq.get(pageID) : findMax(pageID, 0);
+                if (titleMaxFreq.get(pageID) != null) titleMaxFreq.put(pageID, maxTitleFrequency);
+                double maxBodyFrequency = (bodyMaxFreq.get(pageID) != null) ? bodyMaxFreq.get(pageID) : findMax(pageID, 1);
+                if (bodyMaxFreq.get(pageID) != null) bodyMaxFreq.put(pageID, maxBodyFrequency);
+
+                double weight = calculateTF(titleFrequency, maxTitleFrequency, bodyFrequency, maxBodyFrequency) * calculateIDF(pageWordsFreq.size());
+                HashMap<String, Double> h;
+                if (bookOfKnowledge.get(pageID) != null) {
+                    h = bookOfKnowledge.get(pageID);
+                } else {
+                    h = new HashMap<>();
+                }
+                h.put(word, weight);
+                bookOfKnowledge.put(pageID, h);
+
             }
-            if (pageTitleFreq == null) {
-                titleFrequency = 0;
-                System.out.println("titleFrequency NULL");
-            } else {
-                titleFrequency = (pageTitleFreq.get(pageID) != null) ? pageTitleFreq.get(pageID) : 0;
+            if (counter < titleCount) {
+                wordSet = pageTitleFreq.keySet();
+                for (String word: wordSet) {
+                    if (pageWordsFreq.get(word) != null) {
+                        continue;
+                    }
+                    double bodyFrequency = 0;
+                    double titleFrequency = pageTitleFreq.get(word);
+                    counter = counter + 1;
+                    double maxTitleFrequency = (titleMaxFreq.get(pageID) != null) ? titleMaxFreq.get(pageID) : findMax(pageID, 0);
+                    if (titleMaxFreq.get(pageID) != null) titleMaxFreq.put(pageID, maxTitleFrequency);
+                    double maxBodyFrequency = (bodyMaxFreq.get(pageID) != null) ? bodyMaxFreq.get(pageID) : findMax(pageID, 1);
+                    if (bodyMaxFreq.get(pageID) != null) bodyMaxFreq.put(pageID, maxBodyFrequency);
+
+                    double weight = calculateTF(titleFrequency, maxTitleFrequency, bodyFrequency, maxBodyFrequency) * calculateIDF(pageWordsFreq.size());
+                    HashMap<String, Double> h;
+                    if (bookOfKnowledge.get(pageID) != null) {
+                        h = bookOfKnowledge.get(pageID);
+                    } else {
+                        h = new HashMap<>();
+                    }
+                    h.put(word, weight);
+                    bookOfKnowledge.put(pageID, h);
+
+                }
             }
-
-            if (titleFrequency == 0 && bodyFrequency == 0) return 0;
-
-            double maxTitleFrequency = (titleMaxFreq.get(pageID) != null) ? titleMaxFreq.get(pageID) : findMax(pageID, 0);
-            if (titleMaxFreq.get(pageID) != null) titleMaxFreq.put(pageID, maxTitleFrequency);
-            double maxBodyFrequency = (bodyMaxFreq.get(pageID) != null) ? bodyMaxFreq.get(pageID) : findMax(pageID, 1);
-            if (bodyMaxFreq.get(pageID) != null) bodyMaxFreq.put(pageID, maxBodyFrequency);
-
-            System.out.println("PAGEID = " + pageID + "\t QUERY = " + query);
-            System.out.println(titleFrequency + "\t" + maxTitleFrequency + "\t" + bodyFrequency + "\t" + maxBodyFrequency);
-            return calculateTF(titleFrequency, maxTitleFrequency, bodyFrequency, maxBodyFrequency) * calculateIDF(pageWordsFreq.size());
 
         } catch (IOException e) {
-            System.out.println("Failed to calculate term weight for " + query + " with pageID = " + pageID);
-            return -1;
+            System.out.println("Failed to calculate term weight with pageID = " + pageID);
         }
     }
 
@@ -105,24 +145,27 @@ public class Retrieval {
         double dotProduct = 0;
         double magnitudeD = 0;
         double magnitudeQ = 0;
+        calculateTermWeight(pageID);
+        HashMap<String, Double> h = bookOfKnowledge.get(pageID);
         for (String query: queries) {
-            System.out.println("QUERY = " + query);
-            double dq = calculateTermWeight(pageID, query);
             int f = queryFreq.get(query);
-            magnitudeD = magnitudeD + (dq * dq);
+            if (h.get(query) != null) {
+                dotProduct = dotProduct + (h.get(query) * f);
+            }
             magnitudeQ = magnitudeQ + (f * f);
-            dotProduct = dotProduct + (dq * f);
         }
-        System.out.println("RAW = " + dotProduct + " / (sqrt(" + magnitudeD + ") * sqrt(" + magnitudeQ + "))");
+        Set<String> keys = h.keySet();
+        for (String key : keys) {
+            double dq = h.get(key);
+            magnitudeD = magnitudeD + (dq * dq);
+        }
         return dotProduct / (Math.sqrt(magnitudeD) * Math.sqrt(magnitudeQ));
-
     }
 
     private void preprocess(String _queries) {
         List<String> rawQueries = Arrays.asList(_queries.split(" "));
         for (int i = 0; i < rawQueries.size(); ++i) {
             String word = rawQueries.get(i);
-            System.out.println("PREPROCESS = " + word);
             if (stopStem.isStopWord(word)) continue;
             word = stopStem.stem(word);
             if (queryFreq.get(word) != null) {
@@ -130,21 +173,22 @@ public class Retrieval {
             } else {
                 queryFreq.put(word, 1);
             }
-            System.out.println("PROCESSED = " + word);
             queries.add(word);
         }
     }
 
     public List<Integer> retrieve(int limit, String _queries){
         preprocess(_queries);
-        PriorityQueue<Double> queue = new PriorityQueue<Double>();
+        PriorityQueue<Double> queue = new PriorityQueue<Double>(Comparator.reverseOrder());
         HashMap<Double, List<Integer>> simToPage = new HashMap<Double, List<Integer>>();
         List<Integer> result = new ArrayList<Integer>();
+        int temp = 0;
         for (int i = 0 ;i < numDocs; ++i) {
             double sim = calculateSimilarity(i);
             System.out.println("SIMILARITY = " + sim);
             if (sim != 0) {
-                queue.add(sim);
+                temp = temp + 1;
+                queue.offer(sim);
                 List<Integer> l;
                 if (simToPage.get(sim) != null) {
                     l = simToPage.get(sim);
@@ -155,13 +199,14 @@ public class Retrieval {
                 simToPage.put(sim, l);
             }
         }
+        System.out.println("THERE ARE " + temp + " SIMILARITIES");
         for (int i = 0; i < limit; ++i) {
+            if (queue.peek() == null) break;
             double sim = queue.poll();
             if (sim == 0) break;
             List<Integer> l = simToPage.get(sim);
             boolean full = false;
             for (int j = 0; j < l.size(); ++j) {
-//                System.out.println("Iteration " + i + " with sim = " + sim);
                 result.add(l.get(j));
                 if (result.size() >= limit) {
                     full = true;
