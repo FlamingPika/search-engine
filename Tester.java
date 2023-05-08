@@ -11,14 +11,6 @@ import jdbm.helper.FastIterator;
 public class Tester {
     private RecordManager recman;
     private HTree hashtable;
-    private HMap url_id;
-    private HMap id_url;
-    private HMap url_url;
-    private HMap parent_child;
-    private HMap child_parent;
-    private HMap word_page;
-    private HMap page_word;
-    private HMap page_props;
 
     Tester(String recordmanager, String objectname) throws IOException {
         recman = RecordManagerFactory.createRecordManager(recordmanager);
@@ -34,7 +26,7 @@ public class Tester {
 
     public static void main(String[] args) {
         try {
-            BufferedWriter debugger = new BufferedWriter(new FileWriter("test_test.txt"));
+            BufferedWriter debugger = new BufferedWriter(new FileWriter("test_test2.txt"));
 
             HMap url_id = new HMap("url-id", "url-id");
             HMap id_url = new HMap("id_url", "id_url");
@@ -44,6 +36,8 @@ public class Tester {
             HMap word_page = new HMap("word-page", "word-page");
             HMap page_word = new HMap("page-word", "page-word");
             HMap page_props = new HMap("page-props", "page-props");
+            HMap title_page = new HMap("title-page", "title-page");
+            HMap page_title = new HMap("page-title", "page-title");
 
             debugger.write("url-id inverted index: \n");
             Vector<String> res = url_id.sPrintAll();
@@ -77,6 +71,18 @@ public class Tester {
 
             debugger.write("\n \npage-word inverted index:\n");
             res = page_word.hPrintAll();
+            for (int i = 0; i < res.size(); ++i) {
+                debugger.write(res.get(i) + "\n");
+            }
+
+            debugger.write("\n \ntitle-page inverted index:");
+            res = title_page.sPrintAll();
+            for (int i = 0; i < res.size(); ++i) {
+                debugger.write(res.get(i) + "\n");
+            }
+
+            debugger.write("\n \npage-title inverted index:");
+            res = page_title.iPrintAll();
             for (int i = 0; i < res.size(); ++i) {
                 debugger.write(res.get(i) + "\n");
             }
