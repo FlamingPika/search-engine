@@ -1,0 +1,21 @@
+.cfg * {
+    border-bottom: 0;
+}
+
+.profile {
+    width: 40%;
+    margin-bottom: 10px;
+}
+
+.chart {
+    width:50%;
+    height:50%;
+}
+
+.bbox {
+    background-color: #212121;
+    padding: 5px;
+    margin: 5px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+}

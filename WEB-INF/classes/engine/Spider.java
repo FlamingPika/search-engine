@@ -1,18 +1,17 @@
+package engine;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.net.HttpURLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
-import Utilities.StopStem;
+import utilities.StopStem;
 import org.htmlparser.Parser;
 import org.htmlparser.tags.TitleTag;
 import org.htmlparser.beans.StringBean;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.beans.LinkBean;
-import org.jsoup.HttpStatusException;
-
+import utilities.HMap;
 
 public class Spider {
     String userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36";
@@ -42,7 +41,7 @@ public class Spider {
      * @param _debug_filename the location to store debugging output
      * @param _result_filename the location to store result output
      */
-    Spider(int num_of_index, String _debug_filename, String _result_filename, String _log_filename) {
+    public Spider(int num_of_index, String _debug_filename, String _result_filename, String _log_filename) {
         limit = num_of_index;
         try {
             url_id = new HMap("url-id", "url-id");

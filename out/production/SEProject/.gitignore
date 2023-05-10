@@ -1,0 +1,5 @@
+*.db
+*.lg
+*.txt
+!stopwords.txt
+*.class

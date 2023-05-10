@@ -1,4 +1,5 @@
-import Utilities.StopStem;
+package engine;
+import utilities.StopStem;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.Set;
 import java.util.PriorityQueue;
 import java.util.Comparator;
 import java.util.HashMap;
+import utilities.HMap;
 
 public class Retrieval {
     StopStem stopStem;
@@ -47,9 +49,6 @@ public class Retrieval {
                 words = page_title.getWords(pageID);
             } else {
                 words = page_word.getWords(pageID);
-            }
-            if (words == null) {
-                System.out.println("NO WAY!");
             }
             Set<String> keys = words.keySet();
             int maxFreq = 0;
@@ -168,6 +167,7 @@ public class Retrieval {
             String word = rawQueries.get(i);
             if (stopStem.isStopWord(word)) continue;
             word = stopStem.stem(word);
+            if (stopStem.isStopWord(word)) continue;
             if (queryFreq.get(word) != null) {
                 queryFreq.put(word, queryFreq.get(word) + 1);
             } else {
@@ -212,8 +212,9 @@ public class Retrieval {
                     full = true;
                     break;
                 }
-                if (full == true) break;
+
             }
+            if (full == true) break;
         }
         queries.clear();
         return result;
