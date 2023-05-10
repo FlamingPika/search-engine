@@ -223,7 +223,8 @@ public class Spider {
                         }
                     }
                     word = stopStem.stem(word);
-                    if (word == "" || word == " ") continue;
+                    if (stopStem.isStopWord(word)) continue;
+                    if (word.equals("") || word.equals(" ")) continue;
                     word_page.addFrequency(word, parentID);
                     page_word.addWords(parentID, word);
                 }
