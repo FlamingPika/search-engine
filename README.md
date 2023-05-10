@@ -1,10 +1,14 @@
-Prerequisite:
+# Prerequisite:
 1. Download the zip file and unzipped it.
 2. Make sure that the .jar files are inside the right directory as well as the java files
 3. If there exists any .db or .lg files, clean it first using the command "make clean"
 4. Refer to https://github.com/FlamingPika/search-engine for the directory skeleton
 5. To run the Makefile, go to WEB-INF/classes/ directory
 
+
+# File Structure
+
+```
 .
 │
 ├── WEB-INF
@@ -63,6 +67,8 @@ Prerequisite:
 ├── example1.jsp
 ├── form.html
 └── stopwords.txt
+```
+# Instruction
 
 To build and execute the spider to crawl, you can use the existing make file:
 
@@ -79,6 +85,6 @@ make clean = to clean the .db and .lg files
 make test = to test whether the spider can run successfully by retrieving data from the existing databases and
             print it to test.txt . Keep in mind that you need to have the databases file before running this.
 
-[IMPORTANT] before running any of the commands above, please make sure that no .db or .lg files exist. If there exists any, clean it using the command "make clean"
-[IMPORTANT] to keep on restarting the apache server if you make changes to the system
-[IMPORTANT] to EMPTY out and COPY the database file into the apache bin directory, for the apache server to fetch from the database.
+<strong>[IMPORTANT]</strong> before running any of the commands above, please make sure that no .db or .lg files exist. If there exists any, clean it using the command "make clean"
+<strong>[IMPORTANT]</strong> to keep on restarting the apache server if you make changes to the system
+<strong>[IMPORTANT]</strong> to EMPTY out and COPY the database file into the apache bin directory, for the apache server to fetch from the database.
