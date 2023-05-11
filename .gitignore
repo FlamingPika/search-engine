@@ -3,3 +3,4 @@
 *.txt
 !stopwords.txt
 *.class
+*.pdf

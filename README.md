@@ -88,3 +88,8 @@ make test = to test whether the spider can run successfully by retrieving data f
 <strong>[IMPORTANT]</strong> before running any of the commands above, please make sure that no .db or .lg files exist. If there exists any, clean it using the command "make clean"
 <strong>[IMPORTANT]</strong> to keep on restarting the apache server if you make changes to the system
 <strong>[IMPORTANT]</strong> to EMPTY out and COPY the database file into the apache bin directory, for the apache server to fetch from the database.
+
+# Result
+![home_page](assets/images/home.png)
+![search_page](assets/images/search.png)
+![result_page](assets/images/result.png)
